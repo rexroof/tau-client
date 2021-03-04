@@ -14,42 +14,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type TauEvent struct {
-	EventType   string    `json:"event_type"`
-	EventSource string    `json:"event_source"`
-	EventData   EventData `json:"event_data"`
-}
-
-type EventData struct {
-	UserName      string      `json:"user_name"`
-	UserLogin     string      `json:"user_login"`
-	Title         string      `json:"title"`
-	Status        string      `json:"status"`
-	Bits          string      `json:"bits"`
-	Message       string      `json:"message"`
-	Viewers       string      `json:"viewers"`
-	FromUserName  string      `json:"from_broadcaster_user_name"`
-	FromUserLogin string      `json:"from_broadcaster_user_login"`
-	PointReward   PointReward `json:"reward"`
-	SubData       SubData     `json:"data.message"`
-}
-
-type SubData struct {
-	UserName     string `json:"user_name"`
-	SubPlan      string `json:"sub_plan"`
-	Months       string `json:"cumulative_months"`
-	StreakMonths string `json:"streak_months"`
-	Context      string `json:"context"`
-	IsGift       string `json:"is_gift"`
-	SubMessage   string `json:"sub_message.message"`
-}
-
-type PointReward struct {
-	Cost   int    `json:"cost"`
-	Title  string `json:"title"`
-	Prompt string `json:"prompt"`
-}
-
 var addr = flag.String("addr", "localhost:8000", "tau websocket")
 
 func handleEvent(e []byte) {
@@ -58,16 +22,19 @@ func handleEvent(e []byte) {
 	json.Unmarshal(e, &result)
 
 	if strings.Contains(result.EventType, "follow") {
-		message := fmt.Sprintf(" %s gave us a follow %s", result.EventData.UserName, result.EventData.UserLogin)
+		message := fmt.Sprintf(" %s gave us a follow", result.EventData.UserName)
 		cmd := exec.Command("/home/rex/bin/event-message.sh", message)
 		log.Printf("Running command and waiting for it to finish...")
 		err := cmd.Run()
 		log.Printf("Command finished with error: %v", err)
+	} else if strings.Contains(result.EventType, "point-redemption") {
+		title := result.EventData.Reward.Title
+		prompt := result.EventData.Reward.Prompt
 	} else if strings.Contains(result.EventType, "subscribe") {
 		message := fmt.Sprintf(" %s dropped a sub for %s months!  : %s ",
-			result.EventData.SubData.UserName,
-			result.EventData.SubData.Months,
-			result.EventData.SubData.SubMessage)
+			result.EventData.Data.Message.UserName,
+			result.EventData.Data.Message.StreakMonths,
+			result.EventData.Data.Message.SubMessage.Message)
 		cmd := exec.Command("/home/rex/bin/event-message.sh", message)
 		log.Printf("Running command and waiting for it to finish...")
 		err := cmd.Run()

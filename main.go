@@ -16,6 +16,24 @@ import (
 
 var addr = flag.String("addr", "localhost:8000", "tau websocket")
 
+/*
+todo:  have a config file (yaml?)
+      - each line of config could be a twitch event with a go template formatted command to run
+*/
+
+func execute(_cmd []string) bool {
+	app, args := _cmd[0], _cmd[1:]
+	cmd := exec.Command(app, args...)
+	log.Printf("execute: %s\n", strings.Join(args, " "))
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Command finished with error: %v", err)
+		return false
+	} else {
+		return true
+	}
+}
+
 func handleEvent(e []byte) {
 	var result TauEvent
 	fmt.Printf("%s\n", e)
@@ -23,22 +41,24 @@ func handleEvent(e []byte) {
 
 	if strings.Contains(result.EventType, "follow") {
 		message := fmt.Sprintf(" %s gave us a follow", result.EventData.UserName)
-		cmd := exec.Command("/home/rex/bin/event-message.sh", message)
-		log.Printf("Running command and waiting for it to finish...")
-		err := cmd.Run()
-		log.Printf("Command finished with error: %v", err)
+		execute([]string{"/home/rex/bin/event-message.sh", message})
 	} else if strings.Contains(result.EventType, "point-redemption") {
 		title := result.EventData.Reward.Title
 		prompt := result.EventData.Reward.Prompt
+		// add user here
+		message := fmt.Sprintf("points: redeemed %s : %s ", title, prompt)
+		execute([]string{"/home/rex/bin/event-message.sh", message})
+	} else if strings.Contains(result.EventType, "raid") {
+		user := result.EventData.FromBroadcasterUserName
+		raiders := result.EventData.Viewers
+		message := fmt.Sprintf("%s raided with %d viewers", user, raiders)
+		execute([]string{"/home/rex/bin/event-message.sh", message})
 	} else if strings.Contains(result.EventType, "subscribe") {
-		message := fmt.Sprintf(" %s dropped a sub for %s months!  : %s ",
+		message := fmt.Sprintf(" %s dropped a sub for %d months!  : %s ",
 			result.EventData.Data.Message.UserName,
 			result.EventData.Data.Message.StreakMonths,
 			result.EventData.Data.Message.SubMessage.Message)
-		cmd := exec.Command("/home/rex/bin/event-message.sh", message)
-		log.Printf("Running command and waiting for it to finish...")
-		err := cmd.Run()
-		log.Printf("Command finished with error: %v", err)
+		execute([]string{"/home/rex/bin/event-message.sh", message})
 	} else {
 		log.Println(result)
 	}

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -20,6 +21,19 @@ var addr = flag.String("addr", "localhost:8000", "tau websocket")
 todo:  have a config file (yaml?)
       - each line of config could be a twitch event with a go template formatted command to run
 */
+
+// strips string of characters for printing
+func sanitize(_in string) string {
+	pat := regexp.MustCompile(`[^A-Za-z0-9-_+]+`)
+	space := regexp.MustCompile(`\s+`)
+
+	// replace all non-matching characters with spaces.
+	_out := pat.ReplaceAllString(_in, " ")
+	// any duplicate spaces become one
+	_out = space.ReplaceAllString(_out, " ")
+
+	return _out
+}
 
 func execute(_cmd []string) bool {
 	app, args := _cmd[0], _cmd[1:]
@@ -40,25 +54,48 @@ func handleEvent(e []byte) {
 	json.Unmarshal(e, &result)
 
 	if strings.Contains(result.EventType, "follow") {
-		message := fmt.Sprintf(" %s gave us a follow", result.EventData.UserName)
-		execute([]string{"/home/rex/bin/event-message.sh", message})
-	} else if strings.Contains(result.EventType, "point-redemption") {
+		message := fmt.Sprintf("%s followed!", result.EventData.UserName)
+		execute([]string{"/home/rex/bin/follow-message.sh", message})
+
+		// my different point rewards
+	} else if strings.Contains(result.EventType, "channel-channel_points_custom_reward_redemption-add") {
 		title := result.EventData.Reward.Title
-		prompt := result.EventData.Reward.Prompt
-		// add user here
-		message := fmt.Sprintf("points: redeemed %s : %s ", title, prompt)
-		execute([]string{"/home/rex/bin/event-message.sh", message})
+		input := sanitize(result.EventData.UserInput)
+		user := sanitize(result.EventData.UserName)
+
+		log.Printf("channel points: %s %s\n", title, input)
+
+		switch title {
+    case "Eton Treats":
+			execute([]string{"/home/rex/bin/eton-treats.sh", user})
+		case "Eton Pets":
+			execute([]string{"/home/rex/bin/eton-pets.sh", user})
+		case "Test Reward, Do Not Use":
+			execute([]string{"/home/rex/bin/test-reward.sh", user})
+		case "Change Terminal Font":
+			execute([]string{"/home/rex/bin/change-font.sh", input})
+		default:
+			message := fmt.Sprintf("%s %s: %s", user, title, input)
+			execute([]string{"/home/rex/bin/event-message.sh", message})
+		}
+
 	} else if strings.Contains(result.EventType, "raid") {
 		user := result.EventData.FromBroadcasterUserName
 		raiders := result.EventData.Viewers
 		message := fmt.Sprintf("%s raided with %d viewers", user, raiders)
 		execute([]string{"/home/rex/bin/event-message.sh", message})
 	} else if strings.Contains(result.EventType, "subscribe") {
-		message := fmt.Sprintf(" %s dropped a sub for %d months!  : %s ",
-			result.EventData.Data.Message.UserName,
-			result.EventData.Data.Message.StreakMonths,
-			result.EventData.Data.Message.SubMessage.Message)
-		execute([]string{"/home/rex/bin/event-message.sh", message})
+		u := result.EventData.Data.Message.UserName
+		mon := result.EventData.Data.Message.StreakMonths
+		msg := sanitize(result.EventData.Data.Message.SubMessage.Message)
+		message := fmt.Sprintf("%s subbed", u)
+		if mon > 1 {
+			message = fmt.Sprintf("%s x%d", message, mon)
+		}
+		if len(msg) > 0 {
+			message = fmt.Sprintf("%s %s", message, msg)
+		}
+		execute([]string{"/home/rex/bin/sub-message.sh", message})
 	} else {
 		log.Println(result)
 	}

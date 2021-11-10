@@ -1,0 +1,8 @@
+---
+follow: event-message.sh {{user}} gave us a follow
+
+# point redemptions would need options for each type
+point-redemption: event-message.sh spent points {{title}} : {{ prompt }}
+
+subscribe: event-message.sh {{user}} dropped a sub! ({{streak}} month{{s}}!)
+

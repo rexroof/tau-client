@@ -34,13 +34,31 @@ type TauEvent struct {
 			} `json:"message"`
 			Topic string `json:"topic"`
 		} `json:"data"`
+		Message struct {
+			ChannelID        int64  `json:"channel_id,string"`
+			ChannelName      string `json:"channel_name"`
+			Context          string `json:"context"`
+			CumulativeMonths int64  `json:"cumulative_months,string"`
+			DisplayName      string `json:"display_name"`
+			IsGift           bool   `json:"is_gift"`
+			StreakMonths     int64  `json:"streak_months,string"`
+			SubMessage       struct {
+				Emotes  []interface{} `json:"emotes"`
+				Message string        `json:"message"`
+			} `json:"sub_message"`
+			SubPlan     int64     `json:"sub_plan,string"`
+			SubPlanName string    `json:"sub_plan_name"`
+			Time        time.Time `json:"time"`
+			UserID      int64     `json:"user_id,string"`
+			UserName    string    `json:"user_name"`
+		} `json:"message"`
+		Topic                    string    `json:"topic"`
 		FromBroadcasterUserID    int64     `json:"from_broadcaster_user_id,string"`
 		FromBroadcasterUserLogin string    `json:"from_broadcaster_user_login"`
 		FromBroadcasterUserName  string    `json:"from_broadcaster_user_name"`
 		IsAnonymous              bool      `json:"is_anonymous"`
 		IsMature                 bool      `json:"is_mature"`
 		Languate                 string    `json:"languate"`
-		Message                  string    `json:"message"`
 		RedeemedAt               time.Time `json:"redeemed_at"`
 		Reward                   struct {
 			ID     string `json:"id"`

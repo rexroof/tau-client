@@ -78,14 +78,14 @@ func handleEvent(e []byte) {
 			message := fmt.Sprintf("%s %s: %s", user, title, input)
 			execute([]string{"/home/rex/bin/event-message.sh", message})
 		}
-
-	} else if strings.Contains(result.EventType, "raid") {
+	} else if strings.Contains(result.EventType, "channel-raid") {
 		user := result.EventData.FromBroadcasterUserName
 		raiders := result.EventData.Viewers
+    log.Println(raiders)
 		message := fmt.Sprintf("%s raided with %d viewers", user, raiders)
-		execute([]string{"/home/rex/bin/event-message.sh", message})
-	} else if strings.Contains(result.EventType, "subscribe") {
-		u := result.EventData.Data.Message.UserName
+		execute([]string{"/home/rex/bin/channel-raid.sh", message})
+	} else if strings.Contains(result.EventType, "channel-subscribe") {
+		u := result.EventData.UserName
 		mon := result.EventData.Data.Message.StreakMonths
 		msg := sanitize(result.EventData.Data.Message.SubMessage.Message)
 		message := fmt.Sprintf("%s subbed", u)

@@ -76,7 +76,7 @@ type TauEvent struct {
 		UserInput              string `json:"user_input"`
 		UserLogin              string `json:"user_login"`
 		UserName               string `json:"user_name"`
-		Viewers                int64  `json:"viewers,string"`
+		Viewers                int64  `json:"viewers"`
 	} `json:"event_data"`
 	EventID     string `json:"event_id"`
 	EventSource string `json:"event_source"`
